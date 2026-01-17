@@ -12,8 +12,6 @@ The author of this software denies ever creating it.  This software doesn't exis
 
 If you are seeing this notice, you are doing so without permission.
 
-Just seeing these words means you're a pirate.  Arrrrrrrr.
-
 If you attempt to reproduce, distribute, create derivative works from, view, access, modify, download, install, or execute this software in any way, you are in violation of this license and are probably in violation of some bullshit laws that some officious prick of a lawmaker decided on without your consent or knowledge.
 
 Fuck you and fuck your license.
