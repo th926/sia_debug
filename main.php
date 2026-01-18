@@ -13,10 +13,17 @@ function main_logic() {
     search_all_images($cacheobj);
     file_to_db($cacheobj);
     delete_unused_images();
+    clear_sia_table();
     set_time_limit($timelimit);
 }
 
 add_action("background_cleaning_action", "main_logic");
+
+function clear_sia_table() {
+    global $my_db;
+    $query = "DELETE FROM {$my_db->sia} WHERE image_id;";
+    $my_db->query($query);
+}
 
 function delete_unused_images() {
     global $my_db;
@@ -96,6 +103,7 @@ function activation_function() {
 function remove_schedule() {
     if (($timestamp = wp_next_scheduled('background_cleaning_action')))
         wp_unschedule_event($timestamp, 'background_cleaning_action');
+    remove_action("background_cleaning_action", "main_logic");
 }
 
 register_activation_hook(PLUGINPATH, 'activation_function');
