@@ -2,9 +2,8 @@
 function search_all_images(object $cacher)
 {
     global $my_db;
-    $query =
-        "select ID from {$my_db->prefix}posts WHERE post_mime_type LIKE 'image/%' AND post_type = 'attachment';";
-        $res = $my_db->query($query);
+    $query = "select ID from {$my_db->prefix}posts WHERE post_mime_type LIKE 'image/%' AND post_type = 'attachment';";
+    $res = $my_db->query($query);
     foreach ($res as $id) {
         $id = $id["ID"];
         loop_over($id, $cacher,
@@ -17,29 +16,14 @@ function search_all_images(object $cacher)
     }
 }
 
-function loop_over(int $current_id, object $cacher, ...$looplings)
-{
+function loop_over(int $current_id, object $cacher, ...$looplings) {
     foreach ($looplings as $loopie) {
         foreach($loopie as $smaller) {
-            if (is_array($smaller)) {
-                if (array_key_exists("ID", $smaller)) {
-                    if ($smaller["ID"] === 0) {
-                        $smaller["ID"] = "NULL";
-                    }
-                    $cacher->write_cache("{$current_id},{$smaller["ID"]}\n");
-                }
-                if (array_key_exists("post_id", $smaller)) {
-                    if ($smaller["post_id"] === 0) {
-                        $smaller["post_id"] = "NULL";
-                    }
-                    $cacher->write_cache("{$current_id},{$smaller["post_id"]}\n");
-                }
-                continue;
+            $id = is_array($smaller) ? ($smaller['ID'] ?? $smaller['post_id'] ?? null) : $smaller;
+            $id = $id === 0 ? 'NULL' : $id;
+            if ($id !== null) {
+                $cacher->write_cache("{$current_id},{$id}\n");
             }
-            if ($smaller === 0) {
-                $smaller = "NULL";
-            }
-            $cacher->write_cache("{$current_id},{$smaller}\n");
         }
     }
 }
@@ -48,7 +32,7 @@ function options_find($attachment_id)
 {
     global $my_db;
     $result = null;
-    $sql = "SELECT 1 FROM {$my_db->prefix}options WHERE option_value LIKE '%{$attachment_id}%'";
+    $sql = "SELECT option_id FROM {$my_db->prefix}options WHERE option_value LIKE '%{$attachment_id}%'";
     $result = $my_db->query($sql);
     if ($result) {
         // Since no post has the id of 0 (atleast what some Low-cost Labour in Mumbai told me)
