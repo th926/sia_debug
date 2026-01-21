@@ -2,9 +2,6 @@
 function search_all_images(object $cacher)
 {
     global $my_db;
-    $first_time = microtime(true);
-    // $execution_time = ini_get("max_execution_time");
-    // set_time_limit(0);
     $query =
         "select ID from {$my_db->prefix}posts WHERE post_mime_type LIKE 'image/%' AND post_type = 'attachment';";
         $res = $my_db->query($query);
@@ -18,9 +15,6 @@ function search_all_images(object $cacher)
             options_find($id),
         );
     }
-    $second_time = microtime(true);
-    // set_time_limit($execution_time);
-    echo $second_time - $first_time;
 }
 
 function loop_over(int $current_id, object $cacher, ...$looplings)
@@ -68,8 +62,8 @@ function check_featured_image_usage(int $attachment_id)
 {
     global $my_db;
     $sql =
-        "SELECT post_id FROM {$my_db->prefix}postmeta WHERE meta_key = '_thumbnail_id' AND meta_value = ?";
-        return $my_db->query($sql, "d", $attachment_id);
+        "SELECT post_id FROM {$my_db->prefix}postmeta WHERE meta_key = '_thumbnail_id' AND meta_value = %d";
+        return $my_db->query($sql, $attachment_id);
 }
 
 /**
@@ -80,11 +74,11 @@ function check_content_usage(int $attachment_id)
     global $my_db;
     $sql = "SELECT ID FROM {$my_db->prefix}posts
             WHERE post_status = 'publish'
-            AND (post_content LIKE ? OR post_content LIKE ? OR post_content LIKE ?)";
+            AND (post_content LIKE %s OR post_content LIKE %s OR post_content LIKE %s)";
     $p_one = "%wp-image-{$attachment_id}%";
     $p_two = "%attachment_id=\"{$attachment_id}\"%";
     $p_three = "%data-id=\"$attachment_id\"%";
-    return $my_db->query($sql, "sss", $p_one, $p_two, $p_three);
+    return $my_db->query($sql, $p_one, $p_two, $p_three);
 }
 
 function check_acf_usage($attachment_id)
@@ -92,14 +86,14 @@ function check_acf_usage($attachment_id)
     global $my_db;
     $array_res = [];
     $sql = "SELECT post_id FROM {$my_db->prefix}postmeta WHERE
-                                 meta_value = ?
-                                 OR meta_value = ?
-                                 OR meta_value = ?
+                                 meta_value = %s
+                                 OR meta_value = %s
+                                 OR meta_value = %s
                                  AND meta_key NOT LIKE '_%%'";
     $first_param = "%\"{$attachment_id}\"%";
     $second_param = "%i:{$attachment_id}%";
     $third_param = "%attachment_id\";i:{$attachment_id}";
-    return $my_db->query($sql, "sss", $first_param, $second_param, $third_param);
+    return $my_db->query($sql, $first_param, $second_param, $third_param);
 }
 
 function find_acf_block_image_usage($image_id)
@@ -107,8 +101,7 @@ function find_acf_block_image_usage($image_id)
     global $my_db;
     $param = "%\":{$image_id},%";
     return $my_db->query(
-        "SELECT ID FROM {$my_db->prefix}posts WHERE post_type != 'revision' AND post_type != 'attachment' AND post_content LIKE ?",
-        "s",
+        "SELECT ID FROM {$my_db->prefix}posts WHERE post_type != 'revision' AND post_type != 'attachment' AND post_content LIKE %s",
         $param,
     );
 }
