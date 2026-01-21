@@ -14,6 +14,7 @@ function main_logic() {
     file_to_db($cacheobj);
     delete_unused_images();
     clear_sia_table();
+    error_log("SUCCESS: SIA monthly cleaning action");
     set_time_limit($timelimit);
 }
 
@@ -28,18 +29,16 @@ function clear_sia_table() {
 function delete_unused_images() {
     global $my_db;
     $query = "SELECT ID, post_title, post_mime_type FROM {$my_db->prefix}posts WHERE ID NOT IN (SELECT image_id FROM {$my_db->sia}) AND post_mime_type LIKE 'image/%' AND post_type = 'attachment';";
-    $deleted_insertion = "INSERT INTO {$my_db->sia_deleted} VALUES (?, ?, ?)";
+    $deleted_insertion = "INSERT INTO {$my_db->sia_deleted} VALUES (%d, %s, %s)";
     $unused_images = $my_db->query($query);
     foreach ($unused_images as $un) {
-        $my_db->query($deleted_insertion, "iss", $un["ID"], $un["post_title"], $un["post_mime_type"]);
+        $my_db->query($deleted_insertion, $un["ID"], $un["post_title"], $un["post_mime_type"]);
         wp_delete_post($un["ID"], true);
     }
 }
 
 function file_to_db(object $cacher) {
     global $my_db;
-    $first = microtime(true);
-
     $end = "INSERT INTO {$my_db->sia} (image_id, post_id) VALUES ";
 
     $lines = file($cacher->filename, FILE_IGNORE_NEW_LINES);
@@ -53,10 +52,6 @@ function file_to_db(object $cacher) {
     }
     $end = rtrim($end, ',');
     $my_db->query($end);
-
-    $second = microtime(true);
-
-    echo $second - $first;
 }
 
 function establish_database() {
@@ -92,7 +87,7 @@ function remove_database() {
 }
 
 function establish_schedule() {
-    wp_schedule_event(strtotime('today midnight'), 'monthly', 'background_cleaning_action');
+    wp_schedule_event(time()+60, 'monthly', 'background_cleaning_action');
 }
 
 function activation_function() {

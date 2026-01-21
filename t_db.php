@@ -22,8 +22,6 @@ class t_db {
         if (!empty($to_bind)) {
             $query = $this->wpdb->prepare($query, ...$to_bind);
         }
-
-        $result_ret = $this->wpdb->get_results($query, ARRAY_A);
-        return $result_ret ?: false;
+        return $this->wpdb->get_results($query, ARRAY_A)?:false;
     }
 }
