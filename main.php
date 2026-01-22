@@ -7,15 +7,43 @@ global $my_db;
 $my_db = new t_db;
 
 function main_logic() {
-    $timelimit = ini_get('max_execution_time');
-    set_time_limit(0);
+    $first = microtime(true);
+    error_log("SIA INFO: Starting run");
+    if (get_option("is_sia_running") !== "yes") {
+        update_option("is_sia_running", "yes");
+    } else {
+        exit("SIA WARNING: sia is currently running and tried to run again");
+    }
+    global $my_db;
+    $limit = 10;
+    $count_query = "SELECT COUNT(ID) FROM {$my_db->prefix}posts WHERE {$my_db->wp_posts_where};";
+    $total_count = $my_db->query($count_query);
+    $total_count = $total_count[0];
+    $offset = get_option("sia_search_offset");
     $cacheobj = new Cacher;
-    search_all_images($cacheobj);
-    file_to_db($cacheobj);
-    delete_unused_images();
-    clear_sia_table();
-    error_log("SUCCESS: SIA monthly cleaning action");
-    set_time_limit($timelimit);
+    $last_time = search_all_images($cacheobj, $limit, $offset);
+    delete_unused_images_all($cacheobj);
+    if ($offset >= $total_count) {
+        $timestamp = wp_next_scheduled("background_cleaning_action");
+        if ($timestamp) {
+            $date = new DateTime();
+            $date->modify("+1 month");
+            $date->setTime(0,0,0);
+            wp_clear_scheduled_hook("background_cleaning_action");
+            wp_schedule_event($date->getTimestamp(), "monthly", "background_cleaning_action");
+            error_log("SIA SUCCESS: See you next month :)");
+        }
+        update_option("sia_search_offset", 0);
+    } else {
+        update_option("sia_search_offset", $offset + $limit);
+        $next_time = $last_time + $last_time * 0.25;
+        wp_clear_scheduled_hook("background_cleaning_action");
+        wp_schedule_event($next_time, "monthly", "background_cleaning_action");
+    }
+    update_option("is_sia_running", "no");
+    $last = microtime(true);
+    $total_time_taken = $first = $last;
+    error_log("SIA INFO: The run took {$total_time_taken}s");
 }
 
 add_action("background_cleaning_action", "main_logic");
@@ -26,15 +54,44 @@ function clear_sia_table() {
     $my_db->query($query);
 }
 
-function delete_unused_images() {
+//Tries to use the least amount of memory
+// function delete_unused_images_limit(object $cachefile) {
+//     $first = microtime(true);
+//     global $my_db;
+//     $ids = file($cachefile->filename, FILE_IGNORE_NEW_LINES);
+//     foreach($ids as $key => $id) {
+//         $id_string .= "{$id},";
+//         unset($ids[$key]);
+//     }
+
+//     $last = microtime(true);
+//     $time_taken = $first = $last;
+// }
+
+// minimises interaction with the database
+function delete_unused_images_all(object $cachefile) {
+    $first = microtime(true);
     global $my_db;
-    $query = "SELECT ID, post_title, post_mime_type FROM {$my_db->prefix}posts WHERE ID NOT IN (SELECT image_id FROM {$my_db->sia}) AND post_mime_type LIKE 'image/%' AND post_type = 'attachment';";
-    $deleted_insertion = "INSERT INTO {$my_db->sia_deleted} VALUES (%d, %s, %s)";
-    $unused_images = $my_db->query($query);
-    foreach ($unused_images as $un) {
-        $my_db->query($deleted_insertion, $un["ID"], $un["post_title"], $un["post_mime_type"]);
-        wp_delete_post($un["ID"], true);
+    $ids = file($cachefile->filename, FILE_IGNORE_NEW_LINES);
+    $id_string = null;
+    foreach($ids as $key => $id) {
+        $id_string .= "{$id},";
+        unset($ids[$key]);
     }
+    $id_string = rtrim($id_string, ',');
+    $query = "SELECT ID, post_title, post_mime_type FROM {$my_db->prefix}posts WHERE ID NOT IN (%s) AND {$my_db->wp_posts_where};";
+    $unused_images = $my_db->query($query, $id_string);
+    $unused_string = null;
+    foreach ($unused_images as $key => $un) {
+        wp_delete_post($un["ID"], true);
+        $unused_string = "({$un["ID"]}, {$un["post_title"]}, {$un["post_mime_type"]}),";
+        unset($ids[$key]);
+    }
+    $unused_string = rtrim($unused_string, ',');
+    $deleted_insertion = "INSERT INTO {$my_db->sia_deleted} VALUES {$unused_string}";
+    $my_db->query($deleted_insertion);
+    $last = microtime(true);
+    $time_taken = $first = $last;
 }
 
 function file_to_db(object $cacher) {
@@ -87,15 +144,23 @@ function remove_database() {
 }
 
 function establish_schedule() {
+    $timestamp = wp_next_scheduled("background_cleaning_action");
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, 'background_cleaning_action');
+    }
     wp_schedule_event(time()+60, 'monthly', 'background_cleaning_action');
 }
 
 function activation_function() {
     establish_database();
     establish_schedule();
+    update_option("is_sia_running", "yes");
+    update_option("sia_search_offset", 0);
 }
 
 function remove_schedule() {
+    delete_option("sia_search_offset");
+    delete_option("is_sia_running");
     if (($timestamp = wp_next_scheduled('background_cleaning_action')))
         wp_unschedule_event($timestamp, 'background_cleaning_action');
     remove_action("background_cleaning_action", "main_logic");

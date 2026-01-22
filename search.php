@@ -1,8 +1,9 @@
 <?php
-function search_all_images(object $cacher)
+function search_all_images(object $cacher, int $limit, int $offset)
 {
+    $first = microtime(true);
     global $my_db;
-    $query = "select ID from {$my_db->prefix}posts WHERE post_mime_type LIKE 'image/%' AND post_type = 'attachment';";
+    $query = "select ID from {$my_db->prefix}posts WHERE {$my_db->wp_posts_where} LIMIT {$limit} OFFSET $offset;";
     $res = $my_db->query($query);
     foreach ($res as $id) {
         $id = $id["ID"];
@@ -14,6 +15,9 @@ function search_all_images(object $cacher)
             options_find($id),
         );
     }
+    $last = microtime(true);
+    $time_taken = $first - $last;
+    return $time_taken;
 }
 
 function loop_over(int $current_id, object $cacher, ...$looplings) {
@@ -22,7 +26,7 @@ function loop_over(int $current_id, object $cacher, ...$looplings) {
             $id = is_array($smaller) ? ($smaller['ID'] ?? $smaller['post_id'] ?? null) : $smaller;
             $id = $id === 0 ? 'NULL' : $id;
             if ($id !== null) {
-                $cacher->write_cache("{$current_id},{$id}\n");
+                $cacher->write_cache("{$current_id}\n");
             }
         }
     }
