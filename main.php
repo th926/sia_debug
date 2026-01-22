@@ -36,13 +36,13 @@ function main_logic() {
         update_option("sia_search_offset", 0);
     } else {
         update_option("sia_search_offset", $offset + $limit);
-        $next_time = $last_time + $last_time * 0.25;
+        $next_time = time() + ($last_time + $last_time * 0.25);
         wp_clear_scheduled_hook("background_cleaning_action");
         wp_schedule_event($next_time, "monthly", "background_cleaning_action");
     }
     update_option("is_sia_running", "no");
     $last = microtime(true);
-    $total_time_taken = $first = $last;
+    $total_time_taken = $last - $first;
     error_log("SIA INFO: The run took {$total_time_taken}s");
 }
 
@@ -73,6 +73,9 @@ function delete_unused_images_all(object $cachefile) {
     $first = microtime(true);
     global $my_db;
     $ids = file($cachefile->filename, FILE_IGNORE_NEW_LINES);
+    if (empty($ids)) {
+        return;
+    }
     $id_string = null;
     foreach($ids as $key => $id) {
         $id_string .= "{$id},";
@@ -91,7 +94,7 @@ function delete_unused_images_all(object $cachefile) {
     $deleted_insertion = "INSERT INTO {$my_db->sia_deleted} VALUES {$unused_string}";
     $my_db->query($deleted_insertion);
     $last = microtime(true);
-    $time_taken = $first = $last;
+    $time_taken = $last - $first;
 }
 
 function file_to_db(object $cacher) {
