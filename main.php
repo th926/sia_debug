@@ -154,7 +154,7 @@ function establish_schedule() {
 function activation_function() {
     establish_database();
     establish_schedule();
-    update_option("is_sia_running", "yes");
+    update_option("is_sia_running", "no");
     update_option("sia_search_offset", 0);
 }
 
