@@ -12,11 +12,11 @@ function search_all_images(object $cacher, int $limit, int $offset)
             check_content_usage($id),
             check_acf_usage($id),
             find_acf_block_image_usage($id),
-            options_find($id),
+            options_find($id)
         );
     }
     $last = microtime(true);
-    $time_taken = $first - $last;
+    $time_taken = $last - $first;
     return $time_taken;
 }
 
