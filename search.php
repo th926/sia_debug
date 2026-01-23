@@ -1,7 +1,7 @@
 <?php
 function search_all_images(object $cacher, int $limit, int $offset)
 {
-    $first = microtime(true);
+    $first = microtime(true); // Let God Sort Em Out - Clipse
     global $my_db;
     $query = "select ID from {$my_db->prefix}posts WHERE {$my_db->wp_posts_where} LIMIT {$limit} OFFSET $offset;";
     $res = $my_db->query($query);
