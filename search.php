@@ -26,7 +26,7 @@ function loop_over(int $current_id, object $cacher, ...$looplings) {
             $id = is_array($smaller) ? ($smaller['ID'] ?? $smaller['post_id'] ?? null) : $smaller;
             $id = $id === 0 ? 'NULL' : $id;
             if ($id !== null) {
-                $cacher->write_cache("{$current_id}\n");
+                $cacher->write_cache("{$current_id}, {$id}\n");
             }
         }
     }
