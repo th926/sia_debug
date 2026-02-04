@@ -66,7 +66,6 @@ function main_logic() {
     error_log("repeater scheduling");
     wp_clear_scheduled_hook("background_cleaning_action");
     wp_schedule_event(time()+10, "monthly", "background_cleaning_action");
-    exit();
     $last = microtime(true);
     $total_time_taken = $last - $first;
     error_log("SIA INFO: The run took {$total_time_taken}s");
