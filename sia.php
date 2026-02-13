@@ -2,7 +2,7 @@
 /*
 Plugin Name: SIA
 Description: Delete unused images once a month
-Version: 0.1.4
+Version: 0.1.5
 Author: Stem Agency
 Text Domain: sia
 */

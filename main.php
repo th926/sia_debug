@@ -103,7 +103,7 @@ function delete_unused_images_all(int $limit, int $offset) {
     foreach ($unused_images as $key => $un) {
         wp_delete_post($un["ID"], true);
         $unused_string = "({$un["ID"]}, {$un["post_title"]}, {$un["post_mime_type"]}),";
-        unset($ids[$key]);
+        unset($unused_images[$key]);
     }
     $unused_string = rtrim($unused_string, ',');
     $deleted_insertion = "INSERT INTO {$my_db->sia_deleted} VALUES {$unused_string}";
@@ -167,8 +167,8 @@ function remove_database() {
 
 function establish_schedule() {
     $timestamp = wp_next_scheduled("background_cleaning_action");
-    error_log("This is the next timestamp: {$timestamp} in the establisher");
     if ($timestamp) {
+        error_log("This was the next timestamp: {$timestamp} which is now unscheduled");
         wp_unschedule_event($timestamp, 'background_cleaning_action');
     }
     wp_schedule_event(time()+60, 'monthly', 'background_cleaning_action');
