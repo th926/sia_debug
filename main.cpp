@@ -2,10 +2,18 @@
 #include <iostream>
 
 int main(void) {
-    std::cout << "work\n";
+    mysqlx::Session sess("localhost", 3306, "root", "123");
     return 0;
 }
 
-// 1. finne wp_config.php
-// 2. søke og slette
-// 3. fjerne seg selv
+void option_search(mysqlx::Session &connection) {
+
+}
+
+// options search
+// featured image search
+// content search
+// acf search
+// acf block search
+// widget search
+// customizer usage
