@@ -3,9 +3,10 @@ project(MySQLApp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# find_package(MySQL REQUIRED)
-
 add_executable(myapp main.cpp)
 
-target_include_directories(myapp PRIVATE /opt/homebrew/Cellar/mysql-connector-c++/9.7.0/include/)
-target_link_libraries(myapp PRIVATE /opt/homebrew/Cellar/mysql-connector-c++/9.7.0/lib/libmysqlcppconnx.2.9.7.0.dylib)
+find_package(OpenSSL REQUIRED HINTS /opt/homebrew/opt/openssl)
+
+target_include_directories(myapp PRIVATE ./externals/connector-cpp/include)
+target_link_directories(myapp PRIVATE ./externals/connector-cpp)
+target_link_libraries(myapp PRIVATE mysqlcppconnx-static OpenSSL::SSL OpenSSL::Crypto resolv)
