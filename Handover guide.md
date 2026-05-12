@@ -1,6 +1,6 @@
 Utgangspunkt for en handover samtale.
 ## Hvorfor er programmet til
-Mange kunder bruker veldig mye serverplass. Tingen som tar mest plass er bilder, der mange av dem er ubrukte. Serverplass koster mye penger vi ønsker å ha flere servere på planen før vi må oppgradere. 
+Mange kunder bruker veldig mye serverplass. Tingen som tar mest plass er bilder, der mange av dem er ubrukte. Serverplass koster mye penger vi ønsker å ha flere servere på planen før vi må oppgradere.
 
 Wordpress har ingen måte å finne ut av om bilder er brukt. Man kan manuelt slette bilder, men dette er tidkrevende når vi snakker om flere tusen bilder. Tanken er et program som kan finne ut hva som er ubrukt og slette dem.
 ## Begrunnelser tatt i programmet
@@ -12,14 +12,14 @@ Filen kompileres ved bruk av cmake til å lage bygge systemet og make for selve 
 | ------ | ----------------------------------------------------------- |
 | %      | wildcard matcher hva som helst                              |
 | wp_    | prefixen for databasen. Kan endre seg og må finnes dynamisk |
-Programmet henter alle bilder fra wp_posts databasen med følgene spørring: 
+Programmet henter alle bilder fra wp_posts databasen med følgene spørring:
 ``` sql
 select ID from wp_posts where post_mime_type LIKE 'image/%' AND post_type = 'attachment'
 ```
 
 Så iterer vi over alle disse idene og de følgene spørringene er for å finne den nåværende iden i databasen. Vi bruker databasens søke funksjoner for å forenkle programmet.
 ### SQL Spørringer
-Kjernen av programmet er de følgende sql spørringene. `attachment_id` eller `{$attachment_id}` betyr at det må byttes ut med attachment iden du søker etter når du kjører spørringen. I programmet er disse spørringene i klassen `Searcher` som befinner seg i `Searcher.h` og `Searcher.cpp`.
+Kjernen av programmet er de følgende sql spørringene. `attachment_id` eller `{$attachment_id}` betyr at det må byttes ut med attachment iden du søker etter når du kjører spørringen. I programmet er disse spørringene i klassen `Searcher` som befinner seg i `Searcher.h` og `Searcher.cpp`. Alle må søkes for å ikke slette noen brukte bilder!
 #### Postmeta
 ##### Featured images
 ```sql
