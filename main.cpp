@@ -1,89 +1,43 @@
-//#include "mysqlx/devapi/result.h"
-#include <mysqlx/xdevapi.h>
-#include <iostream>
-#include <fstream>
-#include <regex>
+#include "Database.h"
+#include "SearchQuery.hpp"
+#include "WPConfig.h"
+#include "mysql.h"
+#include "wpdb.h"
+#include <cstring>
+#include "HELPME.hpp"
 
-// to extract
-// DB_NAME
-// DB_USER
-// DB_PASSWORD
-// DB_HOST
-// $table_prefix
+#define REPLACE "byttmeg"
 
-class wpdb {
-    public: std::string posts;
-    public: std::string postmeta;
-    public: std::string options;
-    public: std::string prefix;
+#define BIND_PREFIX(X) X.binds.add_bind(config.prefix.c_str(), config.prefix.size(), MYSQL_TYPE_STRING, "", "");
 
-    wpdb(std::string in_prefix) {
-        prefix = in_prefix;
-        posts = prefix.append("posts");
-        postmeta = prefix.append("postmeta");
-        options = prefix.append("options");
-    }
-    ~wpdb() {}
-};
-
-// check if file exists first
-std::string slurp(std::ifstream& in) {
-    std::ostringstream sstr;
-    sstr << in.rdbuf();
-    return sstr.str();
-}
-
-std::string regex_helper(std::string constant, std::string &content) {
-    //R"((?:define\( *')" + constant + R"(', *')(\w+)(?::?)([0-9]*)(?:' *\));)"
-    std::string things = R"((define\( *')" + constant + R"(', *')([[:alnum:]_]+):?([[:digit:]]*)' *\);)";
-    std::regex test = std::regex(things, std::regex::extended);
-    std::smatch m;
-    if (std::regex_search(content, m, test)) {
-        return m[2];
-    }
-    return std::string();
-}
-
-class WPConfig {
-public:
-    std::string db_name;
-    std::string db_user;
-    std::string db_password;
-    std::string db_host;
-
-    std::string prefix;
-
-    std::string config_location = "wp-config.php";
-public:
-    WPConfig() {
-        std::ifstream in_configs (config_location, std::ios::in);
-        if (!in_configs.is_open()) {
-            std::cerr << "There is no wp-config.php in the current directory" << "\n";
-            exit(-1);
-        }
-        std::string in_config = slurp(in_configs);
-        try {
-            std::regex table_regex = std::basic_regex(R"((?:\$table_prefix *= *')(\w+)(?:' *;))");
-
-            db_name = regex_helper("DB_NAME", in_config);
-            db_user = regex_helper("DB_USER", in_config);
-            db_password = regex_helper("DB_PASSWORD", in_config);
-            db_host = regex_helper("DB_HOST", in_config);
-        } catch (std::__1::regex_error &e) {
-            std::cerr << e.what() << "\n";
-            exit(-2);
-        }
-    }
-};
-
-int main(void) {
+int main()
+{
+    const char *names[1] = {"aid"};
     WPConfig config{};
-    try {
-        mysqlx::Session sess(config.db_host, 33060, config.db_user, config.db_password);
-        mysqlx::Schema db = sess.getSchema(config.db_name);
-        mysqlx::Table table = db.getTable("wp_posts");
-    } catch (const mysqlx::Error &err) {
-        std::cerr << "MySQL Error: " << err.what() << std::endl;
+    Database database(config);
+
+
+    const char* sql = "select ID from wp_posts where post_mime_type LIKE 'image/%' AND post_type = 'attachment'";
+    mysql_query(database.m_mysql, sql);
+    MYSQL_RES* result =  null;
+    MYSQL_ROW row = null;
+    if (!(result = mysql_store_result(database.m_mysql))) exit(-1);
+    while ((row = mysql_fetch_row(result)) != null) {
+        // Figure out how to cast this correctly
+        auto attachment_id = static_cast<int>(std::stol(row[0]));
+
+
     }
-    return 0;
+    mysql_free_result(result);
 }
+
+
+
+
+// pass to funcion is QUERY and BIND
+// then execute that
+// QUERY
+// BIND
+// STMT
+// OBJECT
+// OBJECT.FUNCTION

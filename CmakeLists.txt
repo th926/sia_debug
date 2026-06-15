@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 project(MySQLApp)
 
 set(CMAKE_CXX_FLAGS -g)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(myapp main.cpp)
 
 find_package(OpenSSL REQUIRED HINTS /opt/homebrew/opt/openssl)
 
-target_include_directories(myapp PRIVATE ./externals/connector-cpp/include)
-target_link_directories(myapp PRIVATE ./externals/connector-cpp)
-target_link_libraries(myapp PRIVATE mysqlcppconnx-static OpenSSL::SSL OpenSSL::Crypto resolv)
+target_include_directories(myapp PRIVATE ./externals/mysql-9.7.0-macos15-arm64/include)
+target_link_directories(myapp PRIVATE ./externals/mysql-9.7.0-macos15-arm64/lib)
+target_link_libraries(myapp PRIVATE libmysqlclient)
