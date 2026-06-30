@@ -53,7 +53,7 @@ std::string WPConfig::regexport(std::string constant, std::string &content, bool
     return std::string();
 }
 
-std::string WPConfigslurp(std::ifstream& in) {
+std::string WPConfig::slurp(std::ifstream& in) {
     std::ostringstream sstr;
     sstr << in.rdbuf();
     return sstr.str();

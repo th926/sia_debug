@@ -3,33 +3,50 @@
 #include <string>
 #include "HELPME.hpp"
 
+#define PREFIX_REPLACE_STRING "?"
+#define PREFIX_REPLACE_LENGTH 1
 class SearchQuery {
 public:
     std::string m_query;
-    MYSQL_BIND *binds = null;
-    const char **name = null;
+    MYSQL_BIND *m_binds = null;
+    const char **m_name = null;
     MYSQL_STMT *m_stmt = null;
-    std::string *r_prefix = null;
 
-    SearchQuery(MYSQL *connection, std::string *prefix, const char *query)
-    : m_query(query), m_stmt(mysql_stmt_init(connection)), r_prefix(prefix)
+    SearchQuery(MYSQL *connection, MYSQL_BIND *bind, const char**name)
+    : m_stmt(mysql_stmt_init(connection)), m_binds(bind), m_name(name)
     {
         mysql_stmt_prepare(m_stmt, m_query.c_str(), m_query.length());
-        this->prefix();
+        if (m_binds != null)
+            mysql_stmt_bind_named_param(m_stmt, m_binds, 1, m_name);
     }
-    void bind_stmt() {
-        if (binds != null)
-            mysql_stmt_bind_named_param(m_stmt, binds, 1, name);
+    void query(const char *prefix, const char *query) {
+        if (query == null || prefix == null)
+            exit(-2);
+        m_query = query;
+        m_query.replace(
+            m_query.find_first_of(PREFIX_REPLACE_STRING),
+            PREFIX_REPLACE_LENGTH,
+            prefix
+        );
+    }
+    [[deprecated]]
+    void bind(MYSQL_BIND *bind, const char**name) {
+        m_binds = bind;
+        m_name = name;
+        if (m_binds != null)
+            mysql_stmt_bind_named_param(m_stmt, m_binds, 1, m_name);
     }
     bool execute() {
+        int status = 0;
         mysql_stmt_execute(m_stmt); // This needs to returnmaxx
+        status = mysql_stmt_fetch(m_stmt);
+        if (status == 1)
+            exit(-3);
+        if (status == MYSQL_NO_DATA)
+            return false;
         return true;
     }
     ~SearchQuery() {
-        if (m_stmt) mysql_stmt_close(m_stmt);
-    }
-    void prefix() {
-        if (binds.amount != 0 && r_prefix != null)
-            binds.add_bind(r_prefix->c_str(), r_prefix->size(), MYSQL_TYPE_STRING);
+        if (m_stmt != null) mysql_stmt_close(m_stmt);
     }
 };
